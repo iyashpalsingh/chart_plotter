@@ -41,6 +41,7 @@ def load_file():
     data_ready = False
 
     status_label.config(text="Loading file...", foreground="blue")
+    progress.stop()
     progress["value"] = 0
 
     plot_button.config(state="disabled")
@@ -120,11 +121,11 @@ def finish_loading():
     global data_ready
 
     data_ready = True
-
+    progress.stop()
     progress["value"] = 100
 
     plot_button.config(state="normal")
-
+    
     status_label.config(
         text=f"Loaded: {os.path.basename(current_file)} ✔",
         foreground="green"
@@ -168,46 +169,65 @@ def plot():
 # -------------------------------
 # UI
 # -------------------------------
+
 root = tk.Tk()
-root.geometry("1400x800")
-root.title("Battery Data Plotter")
+root.geometry("1600x900")
+root.title("Battery Data Analyzer")
 
-top = ttk.Frame(root)
-top.pack(fill="x", pady=5)
+# TOP TOOLBAR
+toolbar = ttk.Frame(root)
+toolbar.pack(fill="x", padx=10, pady=5)
 
-load_button = ttk.Button(top, text="Load File", command=load_file)
+load_button = ttk.Button(toolbar, text="Load File", command=load_file)
 load_button.pack(side="left", padx=5)
 
-plot_button = ttk.Button(top, text="Plot", command=plot, state="disabled")
+plot_button = ttk.Button(toolbar, text="Plot", command=plot, state="disabled")
 plot_button.pack(side="left", padx=5)
 
+progress = ttk.Progressbar(toolbar, length=300, mode="determinate")
+progress.pack(side="left", padx=20)
 
-# Progress bar
-progress = ttk.Progressbar(
-    root,
-    orient="horizontal",
-    length=400,
-    mode="determinate",
-    maximum=100
+status_label = ttk.Label(toolbar, text="No file loaded", foreground="gray")
+status_label.pack(side="left")
+
+# MAIN AREA
+main = ttk.PanedWindow(root, orient="horizontal")
+main.pack(fill="both", expand=True)
+
+# LEFT PANEL
+left_panel = ttk.Frame(main, width=350)
+main.add(left_panel, weight=1)
+
+# RIGHT PANEL
+right_panel = ttk.Frame(main)
+main.add(right_panel, weight=4)
+
+# TITLE
+ttk.Label(left_panel, text="Signals", font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=10, pady=5)
+
+# NOTEBOOK FOR X/Y
+tabs = ttk.Notebook(left_panel)
+tabs.pack(fill="both", expand=True, padx=10, pady=5)
+
+tab_x = ttk.Frame(tabs)
+tab_y = ttk.Frame(tabs)
+
+tabs.add(tab_x, text="X Axis")
+tabs.add(tab_y, text="Y Axis")
+
+x_panel = FilterableCheckboxPanel(tab_x, GROUPS, True)
+x_panel.pack(fill="both", expand=True)
+
+y_panel = FilterableCheckboxPanel(tab_y, GROUPS, False)
+y_panel.pack(fill="both", expand=True)
+
+# Graph placeholder
+graph_label = ttk.Label(
+    right_panel,
+    text="Plot will appear in external window",
+    font=("Segoe UI", 14),
+    foreground="gray"
 )
-
-progress.pack(pady=5)
-
-
-# Status text
-status_label = ttk.Label(root, text="No file loaded", foreground="gray")
-status_label.pack()
-
-
-# Axis panels
-axis_frame = ttk.Frame(root)
-axis_frame.pack(fill="both", expand=True, pady=10)
-
-x_panel = FilterableCheckboxPanel(axis_frame, GROUPS, True)
-x_panel.pack(side="left", fill="y", padx=10)
-
-y_panel = FilterableCheckboxPanel(axis_frame, GROUPS, False)
-y_panel.pack(side="left", fill="y", padx=10)
-
+graph_label.pack(expand=True)
 
 root.mainloop()

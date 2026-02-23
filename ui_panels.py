@@ -3,6 +3,35 @@ import tkinter as tk
 from tkinter import ttk
 
 
+class CollapsibleGroup(ttk.Frame):
+
+    def __init__(self, parent, title):
+
+        super().__init__(parent)
+
+        self.show = tk.BooleanVar(value=True)
+
+        header = ttk.Checkbutton(
+            self,
+            text=title,
+            variable=self.show,
+            command=self.toggle,
+            style="Toolbutton"
+        )
+
+        header.pack(fill="x")
+
+        self.body = ttk.Frame(self)
+        self.body.pack(fill="x")
+
+    def toggle(self):
+
+        if self.show.get():
+            self.body.pack(fill="x")
+        else:
+            self.body.forget()
+
+
 class FilterableCheckboxPanel(ttk.Frame):
 
     def __init__(self, parent, groups, single_select=False):
@@ -11,97 +40,64 @@ class FilterableCheckboxPanel(ttk.Frame):
 
         self.groups = groups
         self.single_select = single_select
-
         self.vars = {}
-        self.group_vars = {}
 
-        for group, items in groups.items():
+        # SEARCH
+        self.search_var = tk.StringVar()
 
-            ttk.Label(self, text=group, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(5, 0))
+        search = ttk.Entry(self, textvariable=self.search_var)
+        search.pack(fill="x", pady=5)
 
-            gvar = tk.BooleanVar(master=self)
-            self.group_vars[group] = gvar
+        self.search_var.trace_add("write", self.filter)
 
-            chk_all = ttk.Checkbutton(
-                self,
-                text="Select All",
-                variable=gvar,
-                command=lambda g=group: self.toggle_group(g),
-            )
+        # SCROLL AREA
+        canvas = tk.Canvas(self, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self, command=canvas.yview)
 
-            chk_all.pack(anchor="w", padx=10)
+        self.inner = ttk.Frame(canvas)
 
-            btn = ttk.Button(
-                self,
-                text="Filter / Search",
-                width=25,
-                command=lambda g=group: self.open_popup(g),
-            )
-
-            btn.pack(anchor="w", padx=10, pady=(0, 5))
-
-    def toggle_group(self, group):
-
-        state = self.group_vars[group].get()
-
-        for col in self.groups[group]:
-
-            if col not in self.vars:
-                self.vars[col] = tk.BooleanVar(master=self)
-
-            self.vars[col].set(state)
-
-    def get_selected(self):
-
-        return [k for k, v in self.vars.items() if v.get()]
-
-    def open_popup(self, group):
-
-        popup = tk.Toplevel(self)
-        popup.title(group)
-        popup.geometry("250x300")
-
-        search_var = tk.StringVar()
-
-        ttk.Entry(popup, textvariable=search_var).pack(fill="x", padx=5, pady=5)
-
-        frame = ttk.Frame(popup)
-        frame.pack(fill="both", expand=True)
-
-        canvas = tk.Canvas(frame)
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
-
-        inner = ttk.Frame(canvas)
-
-        inner.bind(
+        self.inner.bind(
             "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
 
-        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.create_window((0, 0), window=self.inner, anchor="nw")
+
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        for item in self.groups[group]:
+        self.checks = []
 
-            if item not in self.vars:
-                self.vars[item] = tk.BooleanVar(master=self)
+        for group, items in groups.items():
 
-            ttk.Checkbutton(inner, text=item, variable=self.vars[item]).pack(anchor="w")
+            g = CollapsibleGroup(self.inner, group)
+            g.pack(fill="x", pady=5)
 
-        def filter_items(*args):
+            for item in items:
 
-            term = search_var.get().lower()
+                var = tk.BooleanVar()
+                self.vars[item] = var
 
-            for widget in inner.winfo_children():
+                cb = ttk.Checkbutton(g.body, text=item, variable=var)
+                cb.pack(anchor="w", padx=10)
 
-                text = widget.cget("text").lower()
+                self.checks.append(cb)
 
-                widget.pack_forget()
+    def filter(self, *args):
 
-                if term in text:
-                    widget.pack(anchor="w")
+        term = self.search_var.get().lower()
 
-        search_var.trace_add("write", filter_items)
+        for cb in self.checks:
+
+            text = cb.cget("text").lower()
+
+            if term in text:
+                cb.pack(anchor="w", padx=10)
+            else:
+                cb.pack_forget()
+
+    def get_selected(self):
+
+        return [k for k, v in self.vars.items() if v.get()]
