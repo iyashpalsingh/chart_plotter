@@ -1,5 +1,4 @@
-#ui_panels.py
-
+#ui_pannels.py
 import tkinter as tk
 from tkinter import ttk
 
@@ -18,29 +17,28 @@ class FilterableCheckboxPanel(ttk.Frame):
 
         for group, items in groups.items():
 
-            ttk.Label(self, text=group, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(5,0))
+            ttk.Label(self, text=group, font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(5, 0))
 
-            gvar = tk.BooleanVar()
+            gvar = tk.BooleanVar(master=self)
             self.group_vars[group] = gvar
 
             chk_all = ttk.Checkbutton(
                 self,
                 text="Select All",
                 variable=gvar,
-                command=lambda g=group: self.toggle_group(g)
+                command=lambda g=group: self.toggle_group(g),
             )
 
             chk_all.pack(anchor="w", padx=10)
 
             btn = ttk.Button(
                 self,
-                text="Filter/Search",
+                text="Filter / Search",
                 width=25,
-                command=lambda g=group: self.open_popup(g)
+                command=lambda g=group: self.open_popup(g),
             )
 
-            btn.pack(anchor="w", padx=10, pady=(0,5))
-
+            btn.pack(anchor="w", padx=10, pady=(0, 5))
 
     def toggle_group(self, group):
 
@@ -49,15 +47,13 @@ class FilterableCheckboxPanel(ttk.Frame):
         for col in self.groups[group]:
 
             if col not in self.vars:
-                self.vars[col] = tk.BooleanVar()
+                self.vars[col] = tk.BooleanVar(master=self)
 
             self.vars[col].set(state)
-
 
     def get_selected(self):
 
         return [k for k, v in self.vars.items() if v.get()]
-
 
     def open_popup(self, group):
 
@@ -73,15 +69,16 @@ class FilterableCheckboxPanel(ttk.Frame):
         frame.pack(fill="both", expand=True)
 
         canvas = tk.Canvas(frame)
-
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
 
         inner = ttk.Frame(canvas)
 
-        inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        inner.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
 
-        canvas.create_window((0,0), window=inner, anchor="nw")
-
+        canvas.create_window((0, 0), window=inner, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
@@ -90,7 +87,7 @@ class FilterableCheckboxPanel(ttk.Frame):
         for item in self.groups[group]:
 
             if item not in self.vars:
-                self.vars[item] = tk.BooleanVar()
+                self.vars[item] = tk.BooleanVar(master=self)
 
             ttk.Checkbutton(inner, text=item, variable=self.vars[item]).pack(anchor="w")
 

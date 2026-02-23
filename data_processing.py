@@ -18,8 +18,13 @@ def merge_date_time(df):
 
         df.drop(columns=["Date", "Time"], inplace=True)
 
-    df = df.dropna(subset=["Timestamp"])
-    df = df.sort_values("Timestamp").reset_index(drop=True)
+    if "Timestamp" in df.columns:
+        df = df.sort_values("Timestamp")
+
+    elif "Time(Sec)" in df.columns:
+        df = df.sort_values("Time(Sec)")
+
+    df = df.reset_index(drop=True)
 
     return df
 
